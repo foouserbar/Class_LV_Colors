@@ -343,7 +343,7 @@ Class LV_Colors {
          , ColB := (ColColors.B <> "") ? ColColors.B : UseAltCol ? This.ACB : This.RowB
          , ColT := (ColColors.T <> "") ? ColColors.T : UseAltCol ? This.ACT : This.RowT
          , NumPut(ColT, L + OffCT, "UInt"), NumPut(ColB, L + OffCB, "UInt")
-         Return (!This.AltCols && !This.HasKey(Row) && (Col > This["Cells", Row].MaxIndex())) ? 0x00 : 0x20
+         Return (!This.AltCols && !This["Cells"].HasKey(Row) && (Col > This["Cells", Row].MaxIndex())) ? 0x00 : 0x20
       }
       ; CDDS_ITEMPREPAINT = 0x010001 -----------------------------------------------------------------------------------
       If (DrawStage = 0x010001) {
