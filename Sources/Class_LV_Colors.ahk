@@ -353,7 +353,6 @@ Class LV_Colors {
          Row := This.MapIndexToID(Row)
       ; CDDS_SUBITEMPREPAINT = 0x030001 --------------------------------------------------------------------------------
       If (DrawStage = 0x030001) {
-        
          UseAltCol := !(Col & 1) && (This.AltCols)
          , ColColors := This.Cells[Row][Col]
          , ColB := (ColColors.B != "") ? ColColors.B : UseAltCol ? This.ACB : This.RowB
