@@ -1,9 +1,11 @@
-﻿; ======================================================================================================================
+#Requires AutoHotkey v1.1.37.02
+; ======================================================================================================================
 ; Namespace:      LV_Colors
 ; Function:       Individual row and cell coloring for AHK ListView controls.
-; Tested with:    AHK 1.1.23.05 (A32/U32/U64)
+; Tested with:    AHK 1.1.37.02 (A32/U32/U64)
 ; Tested on:      Win 10 (x64)
 ; Changelog:
+;     1.1.05.00/2024-03-16/just me - adjusted to AHK 1.1.37.02 preventing freezing of the control and/or the GUI
 ;     1.1.04.01/2016-05-03/just me - added change to remove the focus rectangle from focused rows
 ;     1.1.04.00/2016-05-03/just me - added SelectionColors method
 ;     1.1.03.00/2015-04-11/just me - bugfix for StaticMode
@@ -27,11 +29,6 @@
 ; The message handler for WM_NOTIFY messages will be activated for the specified ListView whenever a new instance is
 ; created. If you want to temporarily disable coloring call MyInstance.OnMessage(False). This must be done also before
 ; you try to destroy the instance. To enable it again, call MyInstance.OnMessage().
-;
-; To avoid the loss of Gui events and messages the message handler might need to be set 'critical'. This can be
-; achieved by setting the instance property 'Critical' ti the required value (e.g. MyInstance.Critical := 100).
-; New instances default to 'Critical, Off'. Though sometimes needed, ListViews or the whole Gui may become
-; unresponsive under certain circumstances if Critical is set and the ListView has a g-label.
 ; ======================================================================================================================
 Class LV_Colors {
    ; +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -49,12 +46,12 @@ Class LV_Colors {
    ;                                Default: False
    ;                 NoSort      -  Prevent sorting by click on a header item.
    ;                                Values:  True/False
-   ;                                Default: True
+   ;                                Default: False
    ;                 NoSizing    -  Prevent resizing of columns.
    ;                                Values:  True/False
-   ;                                Default: True
+   ;                                Default: False
    ; ===================================================================================================================
-   __New(HWND, StaticMode := False, NoSort := True, NoSizing := True) {
+   __New(HWND, StaticMode := False, NoSort := False, NoSizing := False) {
       If (This.Base.Base.__Class) ; do not instantiate instances
          Return False
       If This.Attached[HWND] ; HWND is already attached
@@ -84,7 +81,7 @@ Class LV_Colors {
       This.NoSort(!!NoSort)
       This.NoSizing(!!NoSizing)
       This.OnMessage()
-      This.Critical := "Off"
+      This.Critical := "Off" ; <<<<< no effects with 1.1.05.00 +
       This.Attached[HWND] := True
    }
    ; ===================================================================================================================
@@ -308,15 +305,18 @@ Class LV_Colors {
    ; +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    On_WM_NOTIFY(W, L, M, H) {
       ; Notifications: NM_CUSTOMDRAW = -12, LVN_COLUMNCLICK = -108, HDN_BEGINTRACKA = -306, HDN_BEGINTRACKW = -326
-      Critical, % This.Critical
-      If ((HCTL := NumGet(L + 0, 0, "UPtr")) = This.HWND) || (HCTL = This.Header) {
-         Code := NumGet(L + (A_PtrSize * 2), 0, "Int")
-         If (Code = -12)
-            Return This.NM_CUSTOMDRAW(This.HWND, L)
-         If !This.SortColumns && (Code = -108)
-            Return 0
-         If !This.ResizeColumns && ((Code = -306) || (Code = -326))
-            Return True
+      Critical, -1
+      HCTL := NumGet(L + 0, 0, "UPtr"),
+      Code := NumGet(L + (A_PtrSize * 2), 0, "Int")
+      Switch HCTL {
+         Case This.HWND:
+            If (Code = -12)
+               Return This.NM_CUSTOMDRAW(This.HWND, L)
+            If !This.SortColumns && (Code = -108)
+               Return 0
+         Case This.Header:
+            If !This.ResizeColumns && ((Code = -306) || (Code = -326))
+               Return True
       }
    }
    ; -------------------------------------------------------------------------------------------------------------------
